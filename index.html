@@ -241,6 +241,7 @@ button{
     letter-spacing:12px;
     margin:20px 0;
     font-weight:bold;
+    transition: color 0.3s;
 }
 
 .keyboard{
@@ -304,6 +305,7 @@ button{
 .popup p{
     margin-bottom:20px;
     font-size:1.2rem;
+    line-height: 1.5;
 }
 
 .play-again{
@@ -311,10 +313,10 @@ button{
     border-radius:15px;
     background:#ffe66d;
     font-weight:bold;
+    cursor:pointer;
 }
 
 .launch{
-    /* Đã tăng tốc độ hiệu ứng để tải từ mới nhanh hơn */
     animation:launch 1.5s forwards ease-in; 
 }
 
@@ -501,8 +503,9 @@ let guessed = [];
 let timeLeft = 90;
 let timer;
 let score = 0;
+let wordsCompleted = 0;
 let revealedParts = 0;
-let isTransitioning = false; // Biến trạng thái để ngăn click phím trong lúc chuyển câu
+let isTransitioning = false; 
 
 const correctSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
 const wrongSound = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
@@ -523,8 +526,9 @@ createStars();
 
 function startGame(){
     document.querySelector(".game-area").style.display="block";
-    popup.style.display="none"; // Đảm bảo ẩn popup khi chơi lại
+    popup.style.display="none"; 
     score = 0;
+    wordsCompleted = 0; 
     document.getElementById("score").textContent = score;
 
     const difficulty = document.getElementById("difficulty").value;
@@ -537,33 +541,30 @@ function startGame(){
 
     clearInterval(timer);
     
-    loadNewWord(); // Tải câu hỏi đầu tiên
+    loadNewWord(); 
 
-    // Bắt đầu đếm ngược
     timer = setInterval(()=>{
         timeLeft--;
         timeEl.textContent=timeLeft;
 
         if(timeLeft<=0){
-            endGame(); // Thay đổi thành endGame
+            endGame(); 
         }
     },1000);
 }
 
-// Tách hàm load từ mới ra riêng biệt để tái sử dụng
 function loadNewWord() {
     isTransitioning = false;
     guessed = [];
     revealedParts = 0;
 
-    // Reset lại trạng thái của tên lửa
     document.getElementById("rocket").classList.remove("launch");
     rocketParts.forEach(p=>p.classList.remove("show"));
-
-    // Reset lại Hint
     document.getElementById("hintText").innerHTML = ""; 
+    
+    // Đặt lại màu chữ về mặc định (trắng)
+    wordDisplay.style.color = "white"; 
 
-    // Lấy từ ngẫu nhiên
     const category = categorySelect.value;
     const difficulty = document.getElementById("difficulty").value;
     const words = vocab[category][difficulty];
@@ -592,7 +593,7 @@ function createKeyboard(){
 }
 
 function guessLetter(letter,btn){
-    if(isTransitioning || guessed.includes(letter)) return; // Không cho phép click nếu đang đổi câu
+    if(isTransitioning || guessed.includes(letter)) return; 
 
     guessed.push(letter);
     btn.classList.add("disabled");
@@ -607,8 +608,15 @@ function guessLetter(letter,btn){
         btn.classList.add("wrong");
         wrongSound.play();
         timeLeft -=5;
-        if(timeLeft<0) timeLeft=0;
-        timeEl.textContent=timeLeft;
+        
+        // Nếu trừ điểm mà thời gian <= 0 thì ép kết thúc game luôn
+        if(timeLeft <= 0) {
+            timeLeft = 0;
+            timeEl.textContent = timeLeft;
+            endGame();
+            return; 
+        }
+        timeEl.textContent = timeLeft;
     }
 }
 
@@ -625,32 +633,47 @@ function checkWin(){
     .every(letter => guessed.includes(letter));
 
     if(won){
-        isTransitioning = true; // Khóa bàn phím
+        isTransitioning = true; // Khóa không cho bấm phím nữa
         document.getElementById("rocket").classList.add("launch");
         createConfetti();
         
-        score += 10;
+        wordsCompleted++; 
+        score += 10;      
         document.getElementById("score").textContent=score;
+        
+        // Cập nhật dòng text sang màu xanh lá để nhấn mạnh đã đoán trúng
+        wordDisplay.textContent = selectedWord.split("").join(" ");
+        wordDisplay.style.color = "#2ecc71";
 
-        // Đợi 1.5s cho hiệu ứng tên lửa bay hoàn tất, sau đó tải từ tiếp theo
         setTimeout(()=>{
-            loadNewWord();
+            if(timeLeft > 0) {
+                loadNewWord();
+            }
         },1500); 
     }
 }
 
 function endGame(){
     clearInterval(timer);
+    isTransitioning = true; // Khóa bàn phím
+    
+    // HIỆN ĐÁP ÁN DÒNG ANSWER: Lật mở toàn bộ từ đang đoán dở và đổi sang màu đỏ
+    wordDisplay.textContent = selectedWord.split("").join(" ");
+    wordDisplay.style.color = "#ff7675"; 
+
+    // HIỆN POPUP THÔNG BÁO ĐIỂM
     showPopup(
-        "⏰ Time's Up!",
-        `Tuyệt vời! Tổng điểm của bạn là: ${score} ⭐`
+        "⏰ Hết Giờ!",
+        `Từ bạn chưa kịp đoán là: <b style="color:#ffe66d; font-size:1.5rem;">${selectedWord}</b><br><br>
+        🎯 Số từ đoán đúng: <b>${wordsCompleted}</b><br>
+        ⭐ Tổng điểm: <b style="color:#2ecc71;">${score}</b>`
     );
 }
 
 function showPopup(title,message){
     popup.style.display="flex";
     document.getElementById("popupTitle").textContent=title;
-    document.getElementById("popupMessage").textContent=message;
+    document.getElementById("popupMessage").innerHTML=message;
 }
 
 function restartGame(){
