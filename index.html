@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rocket Launch Countdown</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+body{
+    min-height:100vh;
+    background:
+    radial-gradient(circle at top,#2d4d9f 0%,#091540 50%,#050b24 100%);
+    overflow-x:hidden;
+    color:white;
+}
+
+.container{
+    width:100%;
+    max-width:1100px;
+    margin:auto;
+    padding:20px;
+}
+
+h1{
+    text-align:center;
+    font-size:3rem;
+    margin-bottom:20px;
+    color:#ffe66d;
+    text-shadow:0 0 10px #fff;
+}
+
+.setup-screen{
+    background:rgba(255,255,255,0.08);
+    backdrop-filter:blur(10px);
+    border-radius:20px;
+    padding:25px;
+    margin-bottom:20px;
+    box-shadow:0 0 20px rgba(255,255,255,0.15);
+}
+
+.select-group{
+    margin-bottom:20px;
+}
+
+label{
+    display:block;
+    margin-bottom:8px;
+    font-size:1.1rem;
+}
+
+select{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:12px;
+    font-size:1rem;
+    background:#fff;
+}
+
+button{
+    cursor:pointer;
+    border:none;
+    transition:0.3s;
+}
+
+.start-btn{
+    width:100%;
+    padding:15px;
+    background:#ffe66d;
+    color:#111;
+    font-size:1.2rem;
+    border-radius:15px;
+    font-weight:bold;
+}
+
+.start-btn:hover{
+    transform:scale(1.03);
+}
+
+.game-area{
+    display:none;
+}
+
+.top-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+    gap:10px;
+}
+
+.timer{
+    font-size:2rem;
+    font-weight:bold;
+    color:#ff7675;
+}
+
+.score{
+    font-size:1.2rem;
+}
+
+.rocket-section{
+    height:300px;
+    position:relative;
+    margin-bottom:20px;
+    overflow:hidden;
+}
+
+.stars{
+    position:absolute;
+    inset:0;
+}
+
+.star{
+    position:absolute;
+    width:3px;
+    height:3px;
+    background:white;
+    border-radius:50%;
+    opacity:0.8;
+    animation:twinkle 2s infinite alternate;
+}
+
+@keyframes twinkle{
+    from{opacity:0.3;}
+    to{opacity:1;}
+}
+
+.rocket{
+    position:absolute;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    width:140px;
+    height:240px;
+}
+
+.rocket-part{
+    position:absolute;
+    opacity:0;
+    transition:0.5s;
+}
+
+.show{
+    opacity:1;
+}
+
+.body{
+    width:70px;
+    height:120px;
+    background:#dfe6e9;
+    border-radius:40px 40px 15px 15px;
+    left:35px;
+    top:40px;
+}
+
+.window{
+    width:25px;
+    height:25px;
+    background:#74b9ff;
+    border-radius:50%;
+    left:57px;
+    top:75px;
+    border:3px solid white;
+}
+
+.left-wing{
+    width:0;
+    height:0;
+    border-top:40px solid transparent;
+    border-bottom:40px solid transparent;
+    border-right:35px solid #ff7675;
+    left:0;
+    top:100px;
+}
+
+.right-wing{
+    width:0;
+    height:0;
+    border-top:40px solid transparent;
+    border-bottom:40px solid transparent;
+    border-left:35px solid #ff7675;
+    right:0;
+    top:100px;
+}
+
+.engine{
+    width:40px;
+    height:20px;
+    background:#636e72;
+    left:50px;
+    top:155px;
+    border-radius:0 0 10px 10px;
+}
+
+.flame{
+    width:30px;
+    height:60px;
+    background:linear-gradient(to bottom,#ffe66d,#ff6b6b);
+    left:55px;
+    top:170px;
+    clip-path:polygon(50% 100%,0 0,100% 0);
+    animation:flame 0.3s infinite alternate;
+}
+
+@keyframes flame{
+    from{transform:scaleY(1);}
+    to{transform:scaleY(1.2);}
+}
+
+.antenna{
+    width:6px;
+    height:35px;
+    background:white;
+    left:67px;
+    top:5px;
+}
+
+.antenna::before{
+    content:'';
+    position:absolute;
+    width:14px;
+    height:14px;
+    background:#ffe66d;
+    border-radius:50%;
+    left:-4px;
+    top:-10px;
+}
+
+.word{
+    text-align:center;
+    font-size:2.5rem;
+    letter-spacing:12px;
+    margin:20px 0;
+    font-weight:bold;
+}
+
+.keyboard{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(45px,1fr));
+    gap:10px;
+    margin-top:20px;
+}
+
+.key{
+    padding:12px;
+    border-radius:12px;
+    background:#74b9ff;
+    color:white;
+    font-weight:bold;
+    font-size:1rem;
+}
+
+.key:hover{
+    transform:translateY(-2px);
+}
+
+.correct{
+    background:#2ecc71 !important;
+}
+
+.wrong{
+    background:#e74c3c !important;
+}
+
+.disabled{
+    pointer-events:none;
+    opacity:0.5;
+}
+
+.popup{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.7);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:100;
+}
+
+.popup-content{
+    background:#0f1d4d;
+    padding:35px;
+    border-radius:25px;
+    text-align:center;
+    width:90%;
+    max-width:450px;
+    box-shadow:0 0 30px rgba(255,255,255,0.2);
+}
+
+.popup h2{
+    margin-bottom:15px;
+    font-size:2rem;
+}
+
+.popup p{
+    margin-bottom:20px;
+    font-size:1.2rem;
+}
+
+.play-again{
+    padding:14px 25px;
+    border-radius:15px;
+    background:#ffe66d;
+    font-weight:bold;
+}
+
+.launch{
+    /* Đã tăng tốc độ hiệu ứng để tải từ mới nhanh hơn */
+    animation:launch 1.5s forwards ease-in; 
+}
+
+@keyframes launch{
+    0%{
+        bottom:20px;
+    }
+    100%{
+        bottom:120%;
+    }
+}
+
+.confetti{
+    position:absolute;
+    width:10px;
+    height:10px;
+    background:white;
+    animation:fall 3s linear forwards;
+}
+
+@keyframes fall{
+    to{
+        transform:translateY(100vh) rotate(720deg);
+        opacity:0;
+    }
+}
+
+.hint-box{
+    text-align:center;
+    margin-top:10px;
+    font-size:1rem;
+    opacity:0.9;
+}
+
+.hint-btn{
+    margin-top:12px;
+    padding:10px 18px;
+    border-radius:12px;
+    background:#a29bfe;
+    color:white;
+    font-weight:bold;
+}
+
+@media(max-width:700px){
+    h1{
+        font-size:2rem;
+    }
+    .word{
+        font-size:1.8rem;
+        letter-spacing:8px;
+    }
+    .timer{
+        font-size:1.5rem;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>🚀 Rocket Launch Countdown</h1>
+
+<div class="setup-screen">
+<div class="select-group">
+<label>Choose Category</label>
+<select id="category"></select>
+</div>
+
+<div class="select-group">
+<label>Choose Difficulty</label>
+<select id="difficulty">
+<option value="Easy">Easy</option>
+<option value="Medium">Medium</option>
+<option value="Hard">Hard</option>
+</select>
+</div>
+
+<button class="start-btn" onclick="startGame()">Start Mission</button>
+</div>
+
+<div class="game-area">
+<div class="top-bar">
+<div class="timer">⏰ <span id="time">90</span>s</div>
+<div class="score">⭐ Score: <span id="score">0</span></div>
+</div>
+
+<div class="rocket-section">
+<div class="stars" id="stars"></div>
+<div class="rocket" id="rocket">
+<div class="rocket-part antenna"></div>
+<div class="rocket-part body"></div>
+<div class="rocket-part window"></div>
+<div class="rocket-part left-wing"></div>
+<div class="rocket-part right-wing"></div>
+<div class="rocket-part engine"></div>
+<div class="rocket-part flame"></div>
+</div>
+</div>
+
+<div class="word" id="wordDisplay"></div>
+
+<div class="hint-box">
+<button class="hint-btn" onclick="showHint()">💡 Hint</button>
+<div id="hintText"></div>
+</div>
+
+<div class="keyboard" id="keyboard"></div>
+</div>
+
+</div>
+
+<div class="popup" id="popup">
+<div class="popup-content">
+<h2 id="popupTitle"></h2>
+<p id="popupMessage"></p>
+<button class="play-again" onclick="restartGame()">Play Again</button>
+</div>
+</div>
+
+<script>
+const vocab = {
+    Space:{
+        Easy:["planet","rocket","galaxy","astronaut","meteor","satellite","comet","orbit","spaceship","moon","telescope","alien","sunlight","star","gravity","launch","helmet","capsule","engine","nebula"],
+        Medium:["asteroid","cosmonaut","spacecraft","blackhole","observatory","milkyway","starlight","trajectory","radiation","universe","countdown","expedition","solarsystem","spacesuit","eclipse","thruster","landing","vacuum","constellation","shuttle"],
+        Hard:["interstellar","supernova","extraterrestrial","astrophysics","gravitational","microgravity","observational","electromagnetic","terraforming","cosmology","spectroscope","astronomical","hyperspace","propulsion","navigation","spacewalker","saturnalia","celestial","lightyear","exoplanet"]
+    },
+    Animals:{
+        Easy:["tiger","rabbit","giraffe","penguin","dolphin","elephant","parrot","monkey","zebra","hamster","panda","kitten","puppy","kangaroo","camel","whale","peacock","donkey","lion","squirrel"],
+        Medium:["alligator","woodpecker","chimpanzee","crocodile","butterfly","hedgehog","octopus","jellyfish","rhinoceros","flamingo","scorpion","seahorse","tarantula","grasshopper","porcupine","chimp","mongoose","pelican","falcon","buffalo"],
+        Hard:["hippopotamus","chameleon","orangutan","arachnophobia","amphibian","carnivorous","endangered","migration","camouflage","biodiversity","nocturnal","ecosystem","predatory","vertebrate","invertebrate","herbivorous","omnivorous","hibernation","territorial","metamorphosis"]
+    },
+    Food:{
+        Easy:["pizza","burger","sandwich","pancake","spaghetti","noodles","carrot","banana","cheese","chicken","salad","cookie","sausage","icecream","tomato","watermelon","orange","yogurt","rice","soup"],
+        Medium:["croissant","lasagna","cappuccino","blueberry","pineapple","mushroom","barbecue","omelette","seafood","avocado","mayonnaise","strawberry","chocolate","vegetable","cucumber","hamburger","smoothie","espresso","meatball","dumpling"],
+        Hard:["appetizer","nutrition","ingredient","vegetarian","carbohydrate","delicacy","restaurant","beverage","microwave","fermentation","cuisine","consumption","flavorless","nutritious","preservative","marination","international","sustainable","traditional","homemade"]
+    },
+    Jobs:{
+        Easy:["teacher","doctor","chef","pilot","nurse","farmer","artist","driver","baker","waiter","dentist","actor","singer","police","firefighter","cashier","builder","lawyer","mechanic","coach"],
+        Medium:["electrician","journalist","photographer","scientist","architect","programmer","veterinarian","receptionist","businessman","accountant","designer","pharmacist","translator","engineer","consultant","librarian","manager","technician","researcher","entrepreneur"],
+        Hard:["administration","representative","biotechnology","communication","entrepreneurship","negotiation","responsibility","collaboration","qualification","specialization","professionalism","leadership","manufacturing","organization","multitasking","recruitment","supervision","productivity","coordination","innovation"]
+    },
+    Technology:{
+        Easy:["computer","keyboard","internet","website","printer","tablet","monitor","charger","speaker","camera","battery","laptop","software","mouse","screen","headphone","password","browser","robot","digital"],
+        Medium:["application","bluetooth","smartphone","cybersecurity","database","processor","animation","wireless","download","microchip","algorithm","artificial","programming","technology","touchscreen","networking","streaming","navigation","innovation","automation"],
+        Hard:["virtualization","cryptocurrency","telecommunication","authentication","synchronization","nanotechnology","biometric","configuration","cyberspace","engineering","compatibility","infrastructure","transmission","development","interaction","surveillance","accessibility","specification","implementation","connectivity"]
+    },
+    Travel:{
+        Easy:["airport","passport","suitcase","vacation","ticket","hotel","journey","tourist","airplane","beach","backpack","station","subway","taxi","map","bridge","museum","island","mountain","camping"],
+        Medium:["destination","reservation","transportation","adventure","excursion","immigration","navigation","itinerary","landscape","cruise","baggage","historic","souvenir","waterfall","departure","arrival","international","explorer","highway","railway"],
+        Hard:["accommodation","multicultural","transportation","hospitality","civilization","environmental","expeditionary","documentation","geographical","interpretation","communication","sightseeing","sustainability","exploration","customization","transportable","adventurous","internationally","archaeological","ecotourism"]
+    },
+    Sports:{
+        Easy:["football","basketball","volleyball","tennis","swimming","running","cycling","baseball","badminton","boxing","golf","karate","soccer","athlete","stadium","referee","captain","medal","fitness","skiing"],
+        Medium:["championship","tournament","competition","gymnastics","marathon","wrestling","scoreboard","spectator","goalkeeper","training","equipment","motivation","adrenaline","snowboarding","strategy","exercise","teammate","performance","coach","victory"],
+        Hard:["professional","coordination","determination","perseverance","qualification","international","sportsmanship","rehabilitation","concentration","participation","flexibility","discipline","competitive","championships","sponsorship","achievement","endurance","specialized","synchronization","motivation"]
+    },
+    School:{
+        Easy:["classroom","student","teacher","homework","library","pencil","notebook","uniform","science","history","mathematics","grammar","dictionary","project","exam","lesson","calculator","backpack","subject","marker"],
+        Medium:["presentation","assignment","laboratory","curriculum","education","attendance","scholarship","research","discussion","experiment","blackboard","university","translation","literature","paragraph","chemistry","biology","geography","economics","evaluation"],
+        Hard:["communication","responsibility","collaboration","interpretation","pronunciation","organization","concentration","independent","educational","qualification","memorization","specialization","participation","comprehension","examination","investigation","professional","information","presentation","motivation"]
+    },
+    Environment:{
+        Easy:["forest","recycle","pollution","nature","ocean","plastic","weather","rainfall","sunshine","wildlife","energy","farmland","river","mountain","climate","earthquake","storm","desert","village","garden"],
+        Medium:["ecosystem","conservation","renewable","temperature","greenhouse","endangered","agriculture","deforestation","hurricane","environment","vegetation","waterfall","landscape","biodiversity","polluted","recycling","habitat","resources","earthworm","volcano"],
+        Hard:["sustainability","environmental","preservation","contamination","reforestation","industrialization","urbanization","biodiversity","conservationist","responsibility","deforestation","temperature","ecosystematic","renewability","agricultural","transportation","environmentally","overpopulation","biodegradable","ecological"]
+    }
+};
+
+const categorySelect = document.getElementById("category");
+
+Object.keys(vocab).forEach(cat=>{
+    categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+});
+
+const rocketParts = document.querySelectorAll(".rocket-part");
+const wordDisplay = document.getElementById("wordDisplay");
+const keyboard = document.getElementById("keyboard");
+const timeEl = document.getElementById("time");
+const popup = document.getElementById("popup");
+
+let selectedWord = "";
+let guessed = [];
+let timeLeft = 90;
+let timer;
+let score = 0;
+let revealedParts = 0;
+let isTransitioning = false; // Biến trạng thái để ngăn click phím trong lúc chuyển câu
+
+const correctSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+const wrongSound = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
+
+function createStars(){
+    const stars = document.getElementById("stars");
+    for(let i=0;i<70;i++){
+        const star = document.createElement("div");
+        star.className="star";
+        star.style.left=Math.random()*100+"%";
+        star.style.top=Math.random()*100+"%";
+        star.style.animationDelay=Math.random()*2+"s";
+        stars.appendChild(star);
+    }
+}
+
+createStars();
+
+function startGame(){
+    document.querySelector(".game-area").style.display="block";
+    popup.style.display="none"; // Đảm bảo ẩn popup khi chơi lại
+    score = 0;
+    document.getElementById("score").textContent = score;
+
+    const difficulty = document.getElementById("difficulty").value;
+
+    if(difficulty==="Easy") timeLeft=90;
+    if(difficulty==="Medium") timeLeft=60;
+    if(difficulty==="Hard") timeLeft=45;
+
+    timeEl.textContent=timeLeft;
+
+    clearInterval(timer);
+    
+    loadNewWord(); // Tải câu hỏi đầu tiên
+
+    // Bắt đầu đếm ngược
+    timer = setInterval(()=>{
+        timeLeft--;
+        timeEl.textContent=timeLeft;
+
+        if(timeLeft<=0){
+            endGame(); // Thay đổi thành endGame
+        }
+    },1000);
+}
+
+// Tách hàm load từ mới ra riêng biệt để tái sử dụng
+function loadNewWord() {
+    isTransitioning = false;
+    guessed = [];
+    revealedParts = 0;
+
+    // Reset lại trạng thái của tên lửa
+    document.getElementById("rocket").classList.remove("launch");
+    rocketParts.forEach(p=>p.classList.remove("show"));
+
+    // Reset lại Hint
+    document.getElementById("hintText").innerHTML = ""; 
+
+    // Lấy từ ngẫu nhiên
+    const category = categorySelect.value;
+    const difficulty = document.getElementById("difficulty").value;
+    const words = vocab[category][difficulty];
+    selectedWord = words[Math.floor(Math.random()*words.length)].toUpperCase();
+
+    updateWordDisplay();
+    createKeyboard();
+}
+
+function updateWordDisplay(){
+    wordDisplay.textContent = selectedWord
+    .split("")
+    .map(letter => guessed.includes(letter) ? letter : "_")
+    .join(" ");
+}
+
+function createKeyboard(){
+    keyboard.innerHTML="";
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(letter=>{
+        const btn = document.createElement("button");
+        btn.className="key";
+        btn.textContent=letter;
+        btn.onclick=()=>guessLetter(letter,btn);
+        keyboard.appendChild(btn);
+    });
+}
+
+function guessLetter(letter,btn){
+    if(isTransitioning || guessed.includes(letter)) return; // Không cho phép click nếu đang đổi câu
+
+    guessed.push(letter);
+    btn.classList.add("disabled");
+
+    if(selectedWord.includes(letter)){
+        btn.classList.add("correct");
+        correctSound.play();
+        updateWordDisplay();
+        revealRocketPart();
+        checkWin();
+    } else {
+        btn.classList.add("wrong");
+        wrongSound.play();
+        timeLeft -=5;
+        if(timeLeft<0) timeLeft=0;
+        timeEl.textContent=timeLeft;
+    }
+}
+
+function revealRocketPart(){
+    if(revealedParts < rocketParts.length){
+        rocketParts[revealedParts].classList.add("show");
+        revealedParts++;
+    }
+}
+
+function checkWin(){
+    const won = selectedWord
+    .split("")
+    .every(letter => guessed.includes(letter));
+
+    if(won){
+        isTransitioning = true; // Khóa bàn phím
+        document.getElementById("rocket").classList.add("launch");
+        createConfetti();
+        
+        score += 10;
+        document.getElementById("score").textContent=score;
+
+        // Đợi 1.5s cho hiệu ứng tên lửa bay hoàn tất, sau đó tải từ tiếp theo
+        setTimeout(()=>{
+            loadNewWord();
+        },1500); 
+    }
+}
+
+function endGame(){
+    clearInterval(timer);
+    showPopup(
+        "⏰ Time's Up!",
+        `Tuyệt vời! Tổng điểm của bạn là: ${score} ⭐`
+    );
+}
+
+function showPopup(title,message){
+    popup.style.display="flex";
+    document.getElementById("popupTitle").textContent=title;
+    document.getElementById("popupMessage").textContent=message;
+}
+
+function restartGame(){
+    startGame();
+}
+
+function createConfetti(){
+    for(let i=0;i<80;i++){
+        const confetti = document.createElement("div");
+        confetti.className="confetti";
+        confetti.style.left=Math.random()*100+"%";
+        confetti.style.top="-10px";
+        confetti.style.background =
+        `hsl(${Math.random()*360},100%,70%)`;
+        confetti.style.transform =
+        `rotate(${Math.random()*360}deg)`;
+        confetti.style.animationDuration =
+        (Math.random()*3+2)+"s";
+        document.body.appendChild(confetti);
+
+        setTimeout(()=>{
+            confetti.remove();
+        },5000);
+    }
+}
+
+document.addEventListener("keydown",(e)=>{
+    const letter = e.key.toUpperCase();
+    if(/^[A-Z]$/.test(letter)){
+        const buttons = document.querySelectorAll(".key");
+        buttons.forEach(btn=>{
+            if(btn.textContent===letter && !btn.classList.contains("disabled")){
+                btn.click();
+            }
+        });
+    }
+});
+
+function showHint(){
+    const hintText = document.getElementById("hintText");
+    hintText.innerHTML = `
+    Category: <b>${categorySelect.value}</b><br>
+    Word Length: <b>${selectedWord.length}</b> letters
+    `;
+}
+
+</script>
+
+</body>
+</html>
